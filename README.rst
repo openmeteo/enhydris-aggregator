@@ -25,13 +25,13 @@ Enhydris and the Enhydris aggregator.
 
 The aggregator does two things:
 
-1) It has a management command, ``./manage.py aggregate``, which should
+1. It has a management command, ``./manage.py aggregate``, which should
    be run from a cron job, say once per day. It currently works in a
    relatively naïve way: it deletes all data from the target database,
    and copies it from scratch from the source databases through their
    web APIs.
 
-2) It provides a modified template for the timeseries detail page,
+2. It provides a modified template for the timeseries detail page,
    which, instead of a link to download the data, contains a link that
    points to the equivalent page of the originating database.
 
@@ -40,8 +40,11 @@ Installation and configuration
 
 1. Clone the ``enhydris-aggregator`` repository and make sure that when
    Enhydris is executed it is in the Python path.
+
+2. Activate the virtualenv for Enhydris and install the aggregator's
+   requirements with ``pip install -r requirements.txt``.
    
-2. Make the following adjustments to the settings of Enhydris::
+3. Make the following adjustments to the settings of Enhydris::
 
     INSTALLED_APPS = {
         ...
@@ -71,7 +74,7 @@ Installation and configuration
    no id conflict (e.g. in the above example make sure the first source
    database does not use an id larger 999999).
 
-3. Execute ``./manage.py aggregate`` and also have cron execute it. You
+4. Execute ``./manage.py aggregate`` and also have cron execute it. You
    can also try ``./manage.py aggregate --help`` to see possible
    options.
 
