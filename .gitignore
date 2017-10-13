@@ -1,0 +1,9 @@
+*.pyc
+*.egg
+*.egg-info
+enhydris/urls.py
+doc/_build
+dist
+
+# Selenium log files
+*driver.log
