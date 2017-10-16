@@ -55,11 +55,11 @@ Installation and configuration
         'SOURCE_DATABASES': [
             {
                 'URL': 'http://some.enhydris.instance.com/',
-                'STARTING_ID': 1000000,
+                'ID_OFFSET': 1000000,
             },
             {
                 'URL': 'http://some.other.enhydris.instance.com/',
-                'STARTING_ID': 2000000,
+                'ID_OFFSET': 2000000,
             },
         ]
     }
@@ -68,9 +68,9 @@ Installation and configuration
    different from the object with the same id in another source
    database, these ids must be changed before entering these objects to
    the target database. The Enhydris aggregator achieves this by adding
-   the ``STARTING_ID`` to the source id. It does this for all objects,
+   the ``ID_OFFSET`` to the source id. It does this for all objects,
    including lookups, and it changes the foreign keys as well. You must
-   select the ``STARTING_ID`` for all source databases so that there is
+   select the ``ID_OFFSET`` for all source databases so that there is
    no id conflict (e.g. in the above example make sure the first source
    database does not use an id larger 999999).
 

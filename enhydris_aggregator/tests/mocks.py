@@ -1,12 +1,24 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
-# import json
+import json
 import socket
 from threading import Thread
 
-# import requests
+import requests
 
 
 mock_responses = {
+    # Persons
+    'Person/42/': {
+        'last_name': 'Christofides',
+        'first_name': 'Antonis',
+        'middle_names': '',
+        'initials': '',
+        'last_name_alt': '',
+        'first_name_alt': '',
+        'middle_names_alt': '',
+        'initials_alt': '',
+    },
+
     # Stations
     'Station/1403/': {
         'id': 1403,
@@ -81,6 +93,20 @@ mock_responses = {
         'descr_alt': 'Άλλος',
     },
 
+    # GentityAltCode
+    'GentityAltCode/47/': {
+        'gentity': 1403,
+        'type': 5,
+        'value': 'A525',
+    },
+
+    # Overseer
+    'Overseer/37/': {
+        'station': 1403,
+        'person': 42,
+        'is_current': True,
+    },
+
     # Organizations
     'Organization/9/': {
         'id': 9,
@@ -140,7 +166,7 @@ mock_responses = {
     'PoliticalDivision/412/': {
         'id': 412,
         'last_modified': None,
-        'name': 'ΜΕΣΣΗΝΙΑΣ           ',
+        'name': 'ΜΕΣΣΗΝΙΑΣ',
         'short_name': 'ΜΕΣΣΗΝΙΑ',
         'remarks': '',
         'name_alt': '',
@@ -193,8 +219,8 @@ mock_responses = {
     'WaterDivision/505/': {
         'id': 505,
         'last_modified': None,
-        'name': 'ΗΠΕΙΡΟΣ             ',
-        'short_name': 'ΗΠΕΙΡΟΣ ',
+        'name': 'ΗΠΕΙΡΟΣ',
+        'short_name': 'ΗΠΕΙΡΟΣ',
         'remarks': '',
         'name_alt': '',
         'short_name_alt': '',
@@ -208,8 +234,8 @@ mock_responses = {
     'WaterDivision/501/': {
         'id': 501,
         'last_modified': None,
-        'name': 'ΔΥΤΙΚΗ ΠΕΛΟΠΟΝΝΗΣΟΣ ',
-        'short_name': 'Δ-ΠΕΛΟΠ ',
+        'name': 'ΔΥΤΙΚΗ ΠΕΛΟΠΟΝΝΗΣΟΣ',
+        'short_name': 'Δ-ΠΕΛΟΠ',
         'remarks': '',
         'name_alt': '',
         'short_name_alt': '',
@@ -240,7 +266,7 @@ mock_responses = {
     },
 
     # Timeseries
-    'Timeseries/9206': {
+    'Timeseries/9206/': {
         'id': 9206,
         'last_modified': '2012-06-12T13:57:56.307020Z',
         'name': 'Air temperature',
@@ -253,7 +279,7 @@ mock_responses = {
         'timestamp_rounding_months': None,
         'timestamp_offset_minutes': 0,
         'timestamp_offset_months': 0,
-        'datafile': 'http://openmeteo.org/media/0000009206',
+        'datafile': '',
         'start_date_utc': '2012-02-01T14:00:00Z',
         'end_date_utc': '2013-07-06T17:15:00Z',
         'gentity': 1360,
@@ -350,7 +376,7 @@ mock_responses = {
         'id': 52,
         'last_modified': '2016-04-25T11:55:19.032822Z',
         'date': None,
-        'content': 'http://openmeteo.org/media/gentityfile/20160326_174211.jpg',
+        'content': 'http://openmeteo.org/media/gentityfile/dummy.jpg',
         'descr': 'Photo 1',
         'remarks': '',
         'descr_alt': 'Φωτογραφία 1',
@@ -369,11 +395,30 @@ mock_responses = {
     },
 }
 
+# Add list views in mock_responses.
+# So far it only contains the detail views, in the form XXX/Y/. The list view
+# XXX/ is the concatenation of all these.
+for key in list(mock_responses.keys()):
+    list_view = key[:key.index('/') + 1]
+    if list_view not in mock_responses:
+        mock_responses[list_view] = []
+    mock_responses[list_view].append(mock_responses[key])
+
 
 class MockServerRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-        pass
+        path = self.path[5:]  # Strip the "/api/" from the path
+        if path not in mock_responses:
+            self.send_response(requests.codes.not_found)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write('<h1>Not found</h1>'.encode('utf-8'))
+            return
+        self.send_response(requests.codes.ok)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.end_headers()
+        self.wfile.write(json.dumps(mock_responses[path]).encode('utf-8'))
 
 
 def get_free_port():
