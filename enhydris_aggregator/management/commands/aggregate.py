@@ -45,43 +45,50 @@ class Command(BaseCommand):
         r.raise_for_status()
         objects = r.json()
         self.reorder(objects)
-
         for item in objects:
-            many_to_many = {}
-            fields = list(item.keys())
-            for key in fields:
-                field = model._meta.get_field(key)
+            self.copy_object(model, item, source_db['ID_OFFSET'])
 
-                # Append _id to foreign key field names
-                if field.many_to_one or field.one_to_one:
-                    item[key + '_id'] = item[key]
-                    del item[key]
+    def copy_object(self, model, item, id_offset):
+        many_to_many = {}
+        fields = list(item.keys())
+        for key in fields:
+            field = model._meta.get_field(key)
 
-                # Save ManyToMany fields for later
-                if field.many_to_many:
-                    many_to_many[key] = item[key]
-                    del item[key]
+            # Append _id to foreign key field names
+            if field.many_to_one or field.one_to_one:
+                item[key + '_id'] = item[key]
+                del item[key]
 
-            # Add offset to id and all fields ending in _id
-            for key in item.keys():
-                if key != 'id' and not key.endswith('_id'):
-                    continue
-                if item[key] is None:
-                    continue
-                item[key] += source_db['ID_OFFSET']
+            # Save ManyToMany fields for later
+            if field.many_to_many:
+                many_to_many[key] = item[key]
+                del item[key]
 
-            # Save to database
-            new_model_instance = model(**item)
-            new_model_instance.save()
+        # Add offset to id and all fields ending in _id
+        for key in item.keys():
+            if key != 'id' and not key.endswith('_id'):
+                continue
+            if item[key] is None:
+                continue
+            item[key] += id_offset
 
-            # Add many-to-many relationships
-            for m2m in many_to_many:
-                many_to_many[m2m] = [x + source_db['ID_OFFSET']
-                                     for x in many_to_many[m2m]]
-                field = model._meta.get_field(m2m)
-                for m2m_item in many_to_many[m2m]:
-                    o = field.related_model.objects.get(pk=m2m_item)
-                    getattr(new_model_instance, m2m).add(o)
+        # Save to database
+        new_model_instance = model(**item)
+        new_model_instance.save()
+
+        # Add many-to-many relationships
+        for m2m in many_to_many:
+            many_to_many[m2m] = [x + id_offset for x in many_to_many[m2m]]
+            field = model._meta.get_field(m2m)
+
+            # Skip relationships with "through", they are taken care of
+            # elsewhere
+            if not field.rel.through._meta.auto_created:
+                continue
+
+            for m2m_item in many_to_many[m2m]:
+                o = field.related_model.objects.get(pk=m2m_item)
+                getattr(new_model_instance, m2m).add(o)
 
     def reorder(self, objects):
         """Re-order so that foreign keys do not refer to nonexistent objects.

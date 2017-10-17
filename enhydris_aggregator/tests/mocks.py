@@ -9,6 +9,7 @@ import requests
 mock_responses = {
     # Persons
     'Person/42/': {
+        'id': 42,
         'last_name': 'Christofides',
         'first_name': 'Antonis',
         'middle_names': '',
@@ -46,7 +47,7 @@ mock_responses = {
         'stype': [
             1
         ],
-        'overseers': [],
+        'overseers': [42],
         'maintainers': [],
     },
     'Station/1360/': {
@@ -95,6 +96,7 @@ mock_responses = {
 
     # GentityAltCode
     'GentityAltCode/47/': {
+        'id': 47,
         'gentity': 1403,
         'type': 5,
         'value': 'A525',
@@ -102,6 +104,7 @@ mock_responses = {
 
     # Overseer
     'Overseer/37/': {
+        'id': 37,
         'station': 1403,
         'person': 42,
         'is_current': True,
