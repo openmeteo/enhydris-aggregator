@@ -22,8 +22,6 @@ class TestAggregate(TestCase):
         }
         with override_settings(ENHYDRIS_AGGREGATOR=config):
             call_command('aggregate')
-            # Do it a second time to ensure db deletion
-            call_command('aggregate')
 
         # Stations
         self.assertEqual(models.Station.objects.count(), 2)
@@ -117,3 +115,75 @@ class TestAggregate(TestCase):
         self.assertEqual(models.FileType.objects.count(), 1)
         self.assertEqual(models.FileType.objects.get(pk=10001).descr,
                          'jpg Picture')
+
+    def test_multiple_sources(self):
+        # Initially we don't have any stations
+        self.assertEqual(models.Station.objects.count(), 0)
+
+        # Run with three source databases, each with two stations, and verify
+        # there are six stations afterwards
+        config = {
+            'SOURCE_DATABASES': [{
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 10000,
+            }, {
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 20000,
+            }, {
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 30000,
+            }],
+        }
+        with override_settings(ENHYDRIS_AGGREGATOR=config):
+            call_command('aggregate')
+        self.assertEqual(models.Station.objects.count(), 6)
+
+        # Re-run another time to verify data are being deleted
+        config = {
+            'SOURCE_DATABASES': [{
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 10000,
+            }, {
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 20000,
+            }, {
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 30000,
+            }],
+        }
+        with override_settings(ENHYDRIS_AGGREGATOR=config):
+            call_command('aggregate')
+        self.assertEqual(models.Station.objects.count(), 6)
+
+        # Modify the name of the stations; afterwards we will re-run to make
+        # certain the data is being overwritten.
+        for s in models.Station.objects.all():
+            s.name = 'This station has not been overwritten'
+            s.save()
+
+        # Re-run another time, but with one of the source databases being in
+        # error, and verify the correct data has been overwritten
+        config = {
+            'SOURCE_DATABASES': [{
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 10000,
+            }, {
+                'URL': 'http://nonexistent.service.com/',
+                'ID_OFFSET': 20000,
+            }, {
+                'URL': 'http://localhost:{}/'.format(self.mock_server_port),
+                'ID_OFFSET': 30000,
+            }],
+        }
+        with override_settings(ENHYDRIS_AGGREGATOR=config):
+            call_command('aggregate')
+        self.assertEqual(models.Station.objects.count(), 6)
+        self.assertEqual(models.Station.objects.filter(
+            name='This station has not been overwritten').count(), 2)
+        for s in models.Station.objects.filter(
+                name='This station has not been overwritten'):
+            self.assertGreater(s.id, 20000)
+            self.assertLess(s.id, 30000)
+        for s in models.Station.objects.exclude(
+                name='This station has not been overwritten'):
+            self.assertTrue(s.id > 30000 or s.id < 20000)

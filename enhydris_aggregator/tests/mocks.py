@@ -413,10 +413,7 @@ class MockServerRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path[5:]  # Strip the "/api/" from the path
         if path not in mock_responses:
-            self.send_response(requests.codes.not_found)
-            self.send_header('Content-Type', 'text/html; charset=utf-8')
-            self.end_headers()
-            self.wfile.write('<h1>Not found</h1>'.encode('utf-8'))
+            self.send_error(requests.codes.not_found)
             return
         self.send_response(requests.codes.ok)
         self.send_header('Content-Type', 'application/json; charset=utf-8')

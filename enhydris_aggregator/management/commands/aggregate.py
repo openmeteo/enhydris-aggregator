@@ -1,3 +1,6 @@
+from copy import deepcopy
+import sys
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -25,20 +28,35 @@ class Command(BaseCommand):
                    'Station', 'GentityAltCode', 'GentityFile', 'GentityEvent',
                    'Overseer', 'Instrument', 'TimeStep', 'Timeseries')
 
-    @transaction.atomic
     def handle(self, *args, **options):
-        self.delete_database()
-        for source_db in settings.ENHYDRIS_AGGREGATOR['SOURCE_DATABASES']:
-            self.copy_source_db(source_db)
+        # Sort SOURCE_DATABASES by ID_OFFSET
+        source_databases = deepcopy(
+            settings.ENHYDRIS_AGGREGATOR['SOURCE_DATABASES'])
+        source_databases.sort(key=lambda x: x['ID_OFFSET'])
 
-    def delete_database(self):
-        for model_name in reversed(self.model_names):
-            model = models.__dict__[model_name]
-            model.objects.all().delete()
+        for i, source_db in enumerate(source_databases):
+            min_id = source_db['ID_OFFSET']
+            try:
+                max_id = source_databases[i + 1]['ID_OFFSET']
+            except IndexError:
+                max_id = sys.maxsize
+            try:
+                with transaction.atomic():
+                    self.delete_from_database(min_id, max_id)
+                    self.copy_source_db(source_db)
+            except Exception as e:
+                # We have already rolled back; log the problem and continue
+                # to the next source database
+                print(str(e), file=sys.stderr)
 
     def copy_source_db(self, source_db):
         for model_name in self.model_names:
             self.copy_model(source_db, model_name)
+
+    def delete_from_database(self, min_id, max_id):
+        for model_name in reversed(self.model_names):
+            model = models.__dict__[model_name]
+            model.objects.filter(id__gte=min_id, id__lte=max_id).delete()
 
     def copy_model(self, source_db, model_name):
         model = models.__dict__[model_name]
