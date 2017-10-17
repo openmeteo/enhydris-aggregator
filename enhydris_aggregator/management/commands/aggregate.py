@@ -55,11 +55,11 @@ class Command(BaseCommand):
 
     def delete_from_database(self, min_id, max_id):
         for model_name in reversed(self.model_names):
-            model = models.__dict__[model_name]
+            model = getattr(models, model_name)
             model.objects.filter(id__gte=min_id, id__lte=max_id).delete()
 
     def copy_model(self, source_db, model_name):
-        model = models.__dict__[model_name]
+        model = getattr(models, model_name)
         r = requests.get(urljoin(source_db['URL'], 'api', model_name, ''))
         r.raise_for_status()
         objects = r.json()
