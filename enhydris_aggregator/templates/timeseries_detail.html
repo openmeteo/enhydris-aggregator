@@ -1,0 +1,15 @@
+{% extends "timeseries_detail-default.html" %}
+{% load i18n %}
+{% load originating %}
+
+{% block download_timeseries %}
+  <p>
+    {% get_originating_url timeseries.id as original_page %}
+    {% blocktrans %}
+      The information for this time series has been copied from
+      another database. You may be able to download the data from the
+      <a href='{{ original_page }}'>respective page of the originating
+          database</a>.
+    {% endblocktrans %}
+  </p>
+{% endblock %}

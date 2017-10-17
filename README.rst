@@ -46,10 +46,10 @@ Installation and configuration
    
 3. Make the following adjustments to the settings of Enhydris::
 
-    INSTALLED_APPS = {
-        ...
-        'enhydris_aggregator',
-    }
+    # Install enhydris_aggregator immediately before enhydris.hcore, so
+    # that it can override its templates.
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('enhydris.hcore'),
+                          'enhydris_aggregator')
 
     ENHYDRIS_AGGREGATOR = {
         'SOURCE_DATABASES': [

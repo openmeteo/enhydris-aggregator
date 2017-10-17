@@ -1,7 +1,11 @@
+import sys
+
 from django.core.management import call_command
 from django.test import override_settings, TestCase
 
 from enhydris.hcore import models
+
+from enhydris_aggregator.management.commands import aggregate
 
 from .mocks import start_mock_server
 
@@ -19,6 +23,12 @@ class TestAggregate(TestCase):
         }
         with override_settings(ENHYDRIS_AGGREGATOR=config):
             call_command('aggregate')
+
+    @classmethod
+    def tearDownClass(cls):
+        # Delete database contents
+        c = aggregate.Command()
+        c.delete_from_database(0, sys.maxsize)
 
     def test_stations(self):
         self.assertEqual(models.Station.objects.count(), 2)
