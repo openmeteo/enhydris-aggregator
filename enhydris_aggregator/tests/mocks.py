@@ -291,7 +291,7 @@ mock_responses = {
         'time_zone': 1,
         'instrument': None,
         'time_step': 7,
-        'interval_type': None,
+        'interval_type': 18,
     },
 
     # Variables
@@ -396,6 +396,14 @@ mock_responses = {
         'descr_alt': 'Φωτογραφία',
         'mime_type': 'image/jpeg',
     },
+
+    # Interval types
+    'IntervalType/18/': {
+        'id': 18,
+        'descr': 'Sum',
+        'descr_alt': 'Sum',
+        'value': 'SUM',
+    },
 }
 
 # Add list views in mock_responses.
@@ -421,16 +429,26 @@ class MockServerRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(mock_responses[path]).encode('utf-8'))
 
 
-def get_free_port():
+_mock_server_port = None
+
+
+def start_mock_server():
+    global _mock_server_port
+
+    # Return immediately if server is already running
+    if _mock_server_port:
+        return _mock_server_port
+
+    # Get port
     s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
     s.bind(('localhost', 0))
-    address, port = s.getsockname()
+    address, _mock_server_port = s.getsockname()
     s.close()
-    return port
 
-
-def start_mock_server(port):
-    mock_server = HTTPServer(('localhost', port), MockServerRequestHandler)
+    # Start server on port
+    mock_server = HTTPServer(('localhost', _mock_server_port),
+                             MockServerRequestHandler)
     mock_server_thread = Thread(target=mock_server.serve_forever)
     mock_server_thread.setDaemon(True)
     mock_server_thread.start()
+    return _mock_server_port

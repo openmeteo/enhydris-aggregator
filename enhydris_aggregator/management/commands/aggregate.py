@@ -22,8 +22,8 @@ class Command(BaseCommand):
     help = "Deletes database content and re-creates it by copying " \
         "from the source databases"
     model_names = ('GentityAltCodeType', 'FileType', 'EventType',
-                   'StationType', 'InstrumentType', 'Variable', 'TimeZone',
-                   'UnitOfMeasurement', 'Person', 'Organization',
+                   'IntervalType', 'StationType', 'InstrumentType', 'Variable',
+                   'TimeZone', 'UnitOfMeasurement', 'Person', 'Organization',
                    'PoliticalDivision', 'WaterDivision', 'WaterBasin',
                    'Station', 'GentityAltCode', 'GentityFile', 'GentityEvent',
                    'Overseer', 'Instrument', 'TimeStep', 'Timeseries')
