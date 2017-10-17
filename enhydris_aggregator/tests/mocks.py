@@ -282,7 +282,7 @@ mock_responses = {
         'timestamp_rounding_months': None,
         'timestamp_offset_minutes': 0,
         'timestamp_offset_months': 0,
-        'datafile': '',
+        'datafile': 'http://some.place.com/some/file',
         'start_date_utc': '2012-02-01T14:00:00Z',
         'end_date_utc': '2013-07-06T17:15:00Z',
         'gentity': 1360,

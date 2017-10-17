@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db.models import FileField
 
 from enhydris.hcore import models
 
@@ -51,6 +52,7 @@ class Command(BaseCommand):
     def copy_object(self, model, item, id_offset):
         many_to_many = {}
         fields = list(item.keys())
+
         for key in fields:
             field = model._meta.get_field(key)
 
@@ -62,6 +64,11 @@ class Command(BaseCommand):
             # Save ManyToMany fields for later
             if field.many_to_many:
                 many_to_many[key] = item[key]
+                del item[key]
+
+            # Ignore file fields (these are in the original database only)
+            field = model._meta.get_field(key)
+            if isinstance(field, FileField):
                 del item[key]
 
         # Add offset to id and all fields ending in _id
