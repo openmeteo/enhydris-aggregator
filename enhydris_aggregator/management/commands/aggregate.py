@@ -103,6 +103,13 @@ class Command(BaseCommand):
             model.objects.filter(id__gte=min_id, id__lte=max_id).delete()
 
     def copy_model(self, source_db, model_name):
+        # Quick hack for a very special case: deh.hydroscope.gr currently
+        # (2017-10-19) appears to have integrity errors. Don't copy its
+        # GentityAltCode table.
+        if ('deh.hydroscope.gr' in source_db['URL']) and (
+                model_name == 'GentityAltCode'):
+            return
+
         model = getattr(models, model_name)
 
         try:
