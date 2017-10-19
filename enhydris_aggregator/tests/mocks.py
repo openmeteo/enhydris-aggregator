@@ -78,6 +78,9 @@ mock_responses = {
         ],
         'overseers': [],
         'maintainers': [],
+
+        # For compatibility with source databases with Enhydris<=0.5
+        'is_active': True,
     },
 
     # GentityAltCodes
@@ -92,6 +95,11 @@ mock_responses = {
         'last_modified': '2012-06-22T05:05:33.513723Z',
         'descr': 'Other',
         'descr_alt': 'Άλλος',
+
+        # Source database may be Enhydris 0.2. Make sure we aren't being
+        # confused by the extra fields.
+        'original_db': None,
+        'original_id': None,
     },
 
     # GentityAltCode
@@ -282,6 +290,33 @@ mock_responses = {
         'timestamp_rounding_months': None,
         'timestamp_offset_minutes': 0,
         'timestamp_offset_months': 0,
+        'datafile': 'http://some.place.com/some/file',
+        'start_date_utc': '2012-02-01T14:00:00Z',
+        'end_date_utc': '2013-07-06T17:15:00Z',
+        'gentity': 1360,
+        'variable': 5683,
+        'unit_of_measurement': 14,
+        'time_zone': 1,
+        'instrument': None,
+        'time_step': 7,
+        'interval_type': 18,
+    },
+    'Timeseries/9207/': {
+        'id': 9207,
+        'last_modified': '2012-06-12T13:57:56.307020Z',
+        'name': 'Air temperature',
+        'name_alt': 'Θερμοκρασία αέρα',
+        'hidden': False,
+        'precision': 1,
+        'remarks': '',
+        'remarks_alt': '',
+
+        # Check compatibility with older Enhydris versions
+        'nominal_offset_minutes': None,
+        'nominal_offset_months': None,
+        'actual_offset_minutes': 0,
+        'actual_offset_months': 0,
+
         'datafile': 'http://some.place.com/some/file',
         'start_date_utc': '2012-02-01T14:00:00Z',
         'end_date_utc': '2013-07-06T17:15:00Z',

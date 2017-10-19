@@ -18,6 +18,47 @@ def urljoin(*args):
     return result
 
 
+# This is Enhydris 0.2 compatibility stuff. Delete it when this compatibility
+# is broken.
+_interval_types = [
+    {
+        "id": 2,
+        "last_modified": "2013-12-03T18:16:21.546470+02:00",
+        "descr": "Average value",
+        "descr_alt": "Average value",
+        "value": "AVERAGE"
+    },
+    {
+        "id": 4,
+        "last_modified": "2013-12-03T18:16:21.546470+02:00",
+        "descr": "Maximum",
+        "descr_alt": "Maximum",
+        "value": "MAXIMUM"
+    },
+    {
+        "id": 3,
+        "last_modified": "2013-12-03T18:16:21.546470+02:00",
+        "descr": "Minimum",
+        "descr_alt": "Minimum",
+        "value": "MINIMUM"
+    },
+    {
+        "id": 1,
+        "last_modified": "2013-12-03T18:16:21.546470+02:00",
+        "descr": "Sum",
+        "descr_alt": "Sum",
+        "value": "SUM"
+    },
+    {
+        "id": 5,
+        "last_modified": "2013-12-03T18:16:21.546470+02:00",
+        "descr": "Vector average",
+        "descr_alt": "Vector average",
+        "value": "VECTOR_AVERAGE"
+    },
+]
+
+
 class Command(BaseCommand):
     help = "Deletes database content and re-creates it by copying " \
         "from the source databases"
@@ -47,6 +88,9 @@ class Command(BaseCommand):
             except Exception as e:
                 # We have already rolled back; log the problem and continue
                 # to the next source database
+                print(
+                    'Error while copying database {}'.format(source_db['URL']),
+                    file=sys.stderr)
                 print(str(e), file=sys.stderr)
 
     def copy_source_db(self, source_db):
@@ -60,18 +104,53 @@ class Command(BaseCommand):
 
     def copy_model(self, source_db, model_name):
         model = getattr(models, model_name)
-        r = requests.get(urljoin(source_db['URL'], 'api', model_name, ''))
-        r.raise_for_status()
-        objects = r.json()
+
+        try:
+            r = requests.get(urljoin(source_db['URL'], 'api', model_name, ''))
+            r.raise_for_status()
+            objects = r.json()
+        except requests.HTTPError:
+            # Quick hack: Enhydris 0.2 has a bug; it does not serve
+            # IntervalType through the API (this was fixed in 1af68be). If we
+            # come across such a problem, we pretend that the API responded
+            # with the contents of IntervalType, which are the same in all
+            # known installations.
+            if model_name != 'IntervalType':
+                raise
+            objects = _interval_types
         self.reorder(objects)
         for item in objects:
             self.copy_object(model, item, source_db['ID_OFFSET'])
+
+    def __rename_field(self, old_prefix, new_prefix, item, key):
+        if not key.startswith(old_prefix):
+            return key
+        new_key = new_prefix + key[len(old_prefix):]
+        item[new_key] = item[key]
+        del item[key]
+        return new_key
 
     def copy_object(self, model, item, id_offset):
         many_to_many = {}
         fields = list(item.keys())
 
         for key in fields:
+            # Ignore obsolete fields from source databases with older
+            # Enhydris versions. Also ignore last_modified because it causes
+            # too many warnings and is most probably useless anyway (and may
+            # be removed in the future).
+            if key in ('original_id', 'original_db', 'is_active',
+                       'last_modified'):
+                del item[key]
+                continue
+
+            # Take care about fields that have been renamed from older Enhydris
+            # versions
+            key = self.__rename_field('nominal_offset_', 'timestamp_rounding_',
+                                      item, key)
+            key = self.__rename_field('actual_offset_', 'timestamp_offset_',
+                                      item, key)
+
             field = model._meta.get_field(key)
 
             # Append _id to foreign key field names

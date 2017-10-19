@@ -70,7 +70,7 @@ class TestAggregate(TestCase):
                          'Νέδοντας')
 
     def test_timeseries(self):
-        self.assertEqual(models.Timeseries.objects.count(), 1)
+        self.assertEqual(models.Timeseries.objects.count(), 2)
         self.assertEqual(models.Timeseries.objects.get(pk=19206).name,
                          'Air temperature')
 
