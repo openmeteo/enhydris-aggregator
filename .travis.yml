@@ -1,0 +1,32 @@
+sudo: false
+
+language: python
+
+python:
+ - "3.4"
+ - "3.5"
+ - "3.6"
+
+addons:
+  apt:
+    packages:
+      - libgdal1h
+      - gdal-bin
+      - libgdal-dev
+
+install:
+ - pwd
+ - (cd .. && git clone https://github.com/openmeteo/enhydris.git && ln -s ../enhydris-aggregator/enhydris_aggregator enhydris/enhydris_aggregator)
+ - CPLUS_INCLUDE_PATH=/usr/include/gdal C_INCLUDE_PATH=/usr/include/gdal pip install 'gdal<1.11'
+ - pwd
+ - echo "from . import *; INSTALLED_APPS.insert(INSTALLED_APPS.index('enhydris.hcore'), 'enhydris_aggregator')" >../enhydris/enhydris/settings/local.py
+ - pip install codecov
+ - pip install -r ../enhydris/requirements.txt
+ - pip install -r ../enhydris/requirements-test.txt
+ - pip install -r requirements.txt
+
+script:
+ - ( cd ../enhydris && coverage run --include="./enhydris_aggregator/*" --omit="*/tests/*","*/tests.py" manage.py test -v2 enhydris_aggregator )
+
+after_success:
+ - cd ../enhydris && codecov
